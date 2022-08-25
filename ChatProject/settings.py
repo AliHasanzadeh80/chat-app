@@ -112,6 +112,11 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static')
 ]
+LOGIN_URL = 'account-login'
+LOGIN_REDIRECT_URL = 'chat-home'
+LOGOUT_REDIRECT_URL = 'account-login'
+
+AUTH_USER_MODEL = 'account.User'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
