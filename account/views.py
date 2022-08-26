@@ -1,6 +1,7 @@
-from .models import User
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .models import User
 from .forms import UserCreationForm
 from .forms import VerifyForm
 from . import verify
@@ -9,14 +10,17 @@ from . import verify
 def register(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
-       
         if form.is_valid():
-            phone_number = form.cleaned_data.get('phone')    
-            print(User.objects.filter(phone=phone_number).exists())
+            phone_number = form.cleaned_data.get('phone')              
             if not User.objects.filter(phone=phone_number).exists():
-                form.save()
-                verify.send(form.cleaned_data.get('phone'))
-                return redirect('chat-home')
+                try:
+                    verify.send(form.cleaned_data.get('phone'))
+                    form.save()
+                    return redirect('chat-home')
+                except:
+                    messages.error(request, 'Invalid phone number!')   
+            else:
+                messages.warning(request, 'Entered phone number is already verified!')
     else:
         form = UserCreationForm()
 
@@ -42,6 +46,8 @@ def verify_code(request):
                 request.user.is_verified = True
                 request.user.save()
                 return redirect('chat-home')
+            else:
+                messages.error(request, 'please enter verification code correctly!')
     else:
         form = VerifyForm()
 

@@ -1,9 +1,11 @@
+from logging import PlaceHolder
 from django import forms
 from django.contrib.auth.forms import UserCreationForm as BaseUserCreationForm
 from .models import User
 
 class UserCreationForm(BaseUserCreationForm):
-    phone = forms.CharField(max_length=20, required=True, help_text='Phone Number')
+    phone = forms.CharField(max_length=20, required=True, help_text='Phone Number',
+                            widget=forms.TextInput(attrs={'placeholder': 'ex. +989101398655'}))
 
     class Meta:
         model = User
