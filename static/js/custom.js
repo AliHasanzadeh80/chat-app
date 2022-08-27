@@ -1,5 +1,13 @@
-$(document).ready(function(){
-    $('#action_menu_btn').click(function(){
-        $('.action_menu').toggle();
+$(function(){
+    $(".heading-compose").click(function() {
+      $(".side-two").css({
+        "left": "0"
+      });
     });
-        });
+
+    $(".newMessage-back").click(function() {
+      $(".side-two").css({
+        "left": "-100%"
+      });
+    });
+})

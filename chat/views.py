@@ -7,5 +7,5 @@ from account.decorators import verification_required
 @login_required
 @verification_required
 def home(request):
-    messages.success(request, f"Logged in as {request.user.username}")
+    # messages.success(request, f"Logged in as {request.user.username}")
     return render(request, 'chat/home.html', context={'title': 'Home'})
