@@ -1,3 +1,10 @@
+from re import L
 from django.contrib import admin
+from .models import Room, SavedContactName, Message
 
-# Register your models here.
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ('room', 'sender', 'content', 'delivered_time')
+
+admin.site.register(Room)
+admin.site.register(SavedContactName)
+admin.site.register(Message, MessageAdmin)
