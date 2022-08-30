@@ -30,6 +30,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'crispy_forms',
+    'rest_framework',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -67,6 +69,16 @@ MESSAGE_TAGS = {message_constants.DEBUG: 'debug',
                 message_constants.ERROR: 'danger',}
 
 WSGI_APPLICATION = 'ChatProject.wsgi.application'
+ASGI_APPLICATION = "ChatProject.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
 
 
 # Database
