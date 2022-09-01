@@ -132,6 +132,10 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static')
 ]
+MEDIA_URL = '/images/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'static/images')
+
+
 LOGIN_URL = 'account-login'
 LOGIN_REDIRECT_URL = 'chat-home'
 LOGOUT_REDIRECT_URL = 'account-login'

@@ -8,4 +8,9 @@ from account.decorators import verification_required
 @verification_required
 def home(request):
     # messages.success(request, f"Logged in as {request.user.username}")
-    return render(request, 'chat/home.html', context={'title': 'Home'})
+    return render(request, 'chat/homechild.html', context={'title': 'Home'})
+
+@login_required
+@verification_required
+def addContact(request):
+    return render(request, 'chat/addcontact.html')

@@ -17,7 +17,8 @@ def register(request):
                     verify.send(form.cleaned_data.get('phone'))
                     form.save()
                     return redirect('chat-home')
-                except:
+                except Exception as e:
+                    print(e)
                     messages.error(request, 'Invalid phone number!')   
             else:
                 messages.warning(request, 'Entered phone number is already verified!')
