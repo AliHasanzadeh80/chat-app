@@ -24,13 +24,15 @@
               <input type="text" class="form-control" id="inputPhone" placeholder="ex. +909101398655" required>
             </div>
             <div class="form-check">
+              <br>
               <input type="checkbox" class="form-check-input" id="custom-or-another" onchange="checkBX()">
               <label class="form-check-label" for="custom-or-another">use contact's original name</label>
-              <small id="nameHelp" class="form-text text-danger">entered phone number is eighter invalid or unvrified</small>
+              <small id="invalidPhone" class="form-text text-danger"></small>
+
             </div>
             <div class="modal-footer">
                 <br>
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="clearAddContactMsg()">Close</button>
                 <button type="submit" class="btn btn-primary">Add</button>
             </div>
         </form>

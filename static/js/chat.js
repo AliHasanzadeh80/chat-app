@@ -24,6 +24,7 @@ catch (e) {
 
 // ------------------------------- global variables ----------------------------------
 const sockets = [chatSock, roomSock, msgSock];
+const invalidPhone = document.getElementById('invalidPhone');
 var rooms;
 var messages;
 
@@ -43,9 +44,9 @@ roomSock.onopen = function(e){
 }
 roomSock.onmessage = function (e) {
     var response = JSON.parse(e.data);
-    if(response.action === "list"){
-        rooms = response.data;
-        console.log(rooms);
+    console.log(response);
+    if(response.response_status == 400){
+        invalidPhone.innerText = response.data.message;
     }
 }
 // ------------------------------- message socket ----------------------------------
@@ -66,7 +67,7 @@ function sockAction(...params){
     // num, action, pk, data
     var sockIndex = params[0];
     var action = params[1];
-  
+    // console.log(params);
     switch(action){
         case 'list':
             sockets[sockIndex].send(JSON.stringify({
@@ -87,7 +88,7 @@ function sockAction(...params){
             sockets[sockIndex].send(JSON.stringify({
                 action: "create",
                 request_id: new Date().getTime(),
-                data: params[3]
+                data: params[2]
             }))
             break;
 
@@ -97,9 +98,16 @@ function sockAction(...params){
                 request_id: new Date().getTime(),
                 pk: params[2]
             }))
-            break;  
-    }
-    
+            break;
+        
+        case 'new_chat':
+            sockets[sockIndex].send(JSON.stringify({
+                action: "new_chat",
+                request_id: new Date().getTime(),
+                inputs: params[2]
+            }))
+            break;
+    }  
 }
 
 function contactForm(){
@@ -110,14 +118,16 @@ function contactForm(){
         var inputPhone = document.getElementById('inputPhone');
         inputs = {
             contact_name: inputName.value,
-            phone: inputPhone.value
+            phone: inputPhone.value,
+            creator: user
+        }      
+        if(userPhone != inputs.phone){
+            sockAction(1, 'new_chat', inputs);
+        }else{
+            invalidPhone.innerText = 'you can not add your own phone number!';
         }
         inputName.value = '';
-        inputPhone.value = '';
-
-        console.log(inputs);
-        // if(inputs.phone === userPhone || )
-
+        inputPhone.value = '';       
     })
 }
 

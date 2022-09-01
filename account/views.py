@@ -14,6 +14,7 @@ def register(request):
             phone_number = form.cleaned_data.get('phone')              
             if not User.objects.filter(phone=phone_number).exists():
                 try:
+                    print('sending...')
                     verify.send(form.cleaned_data.get('phone'))
                     form.save()
                     return redirect('chat-home')

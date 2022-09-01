@@ -1,5 +1,6 @@
 from djangochannelsrestframework.generics import AsyncAPIConsumer, GenericAsyncAPIConsumer
 from djangochannelsrestframework.decorators import action
+from django.db.models import Count
 from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
 from rest_framework import status
@@ -13,6 +14,7 @@ from djangochannelsrestframework.mixins import (
     DeleteModelMixin,
 )
 from .models import Room, SavedContactName, Message
+from account.models import User, Profile
 from .serializers import RoomSerializer, CNameSerializer, MessageSerializer
 
 
@@ -64,6 +66,60 @@ class RoomConsumer(
 
     queryset = Room.objects.all()
     serializer_class = RoomSerializer
+
+    
+    @action()
+    async def new_chat(self, request_id, inputs, **kwargs):
+        created, message = await self.add_chat(inputs)
+        resp = {"message": message}
+
+        if created:
+            channel = get_channel_layer()
+            await channel.group_send(
+                f"_{inputs.get('creator')}_",
+                {"type": "send.data", "content": inputs}
+            )
+            return resp, status.HTTP_200_OK
+        else:
+            return resp, status.HTTP_400_BAD_REQUEST
+
+    @database_sync_to_async
+    def add_chat(self, inputs):        
+        print(inputs)
+        input_phone = inputs.get('phone')
+        input_cname = inputs.get('contact_name')
+        creator = self.scope['user']
+        new_contact = User.objects.filter(phone=input_phone)
+        print(creator, new_contact.first())
+        message = None
+
+        if new_contact.exists():
+            new_contact = new_contact.first()
+            ids = [creator.id, new_contact.id]
+            rooms = Room.objects.annotate(count=Count('members')).filter(count=len(ids))
+            for id in ids:
+                rooms = rooms.filter(members__id=id)
+            # print(rooms)
+            if rooms.exists():
+                message = "this contact is already in your contacts list!"
+                return False, message
+            else:
+                new_room = Room.objects.create(created_by=creator)             
+                new_room.members.add(creator)
+                new_room.members.add(new_contact)
+                new_room.save()
+                
+                if input_cname:
+                    SavedContactName.objects.create(
+                        user=new_contact,
+                        chat=new_room,
+                        saved_name=input_cname,
+                    )
+                
+                return True, message
+        else:
+            message = "entered phone number is either invalid or unverified!"
+            return False, message
 
 
 class MessageConsumer(

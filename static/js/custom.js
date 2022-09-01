@@ -21,6 +21,10 @@ function checkBX(){
   }
 }
 
+function clearAddContactMsg(){
+  document.getElementById('invalidPhone').innerText='';
+}
+
 function openNav() {
   document.getElementById("mySidenav").style.width = "200px";
   // document.getElementById("main").style.marginLeft = "200px";

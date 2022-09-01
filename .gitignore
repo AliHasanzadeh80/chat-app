@@ -1,5 +1,4 @@
 *.pyc
 /account/migrations/
 /chat/migrations/
-*.sqlite3
 db.sqlite3
