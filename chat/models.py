@@ -19,7 +19,7 @@ class Room(models.Model):
 
 
 class SavedContactName(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='user')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='saved_names')
     chat = models.ForeignKey(Room, null=True, on_delete=models.SET_NULL, related_name='chat')
     saved_name = models.CharField(max_length=255, blank=True, null=True)
 
@@ -48,5 +48,12 @@ class Message(models.Model):
         return f"from '{self.room}': {self.content[:10]}"
     
     @property
-    def msg_overview(self):
-        return self.content[:15]
+    def get_full_data(self):
+        return {
+            "id": self.id,
+            "sender": self.sender.username,
+            "content": self.content,
+            "seen": self.seen,
+            "status": self.status,
+            "delivered_time": self.delivered_time.timestamp(),
+        }

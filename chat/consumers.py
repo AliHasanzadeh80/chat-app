@@ -1,6 +1,7 @@
 from djangochannelsrestframework.generics import AsyncAPIConsumer, GenericAsyncAPIConsumer
 from djangochannelsrestframework.decorators import action
 from django.db.models import Count
+from django.core import serializers
 from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
 from rest_framework import status
@@ -30,6 +31,7 @@ class ChatConsumer(
             await (self.channel_layer.group_add)(self.broadcastName, self.channel_name)
 
         self.channel = get_channel_layer()
+        await self.update_OnOff(True)
         await self.accept()
 
 
@@ -40,17 +42,43 @@ class ChatConsumer(
 
 
     async def disconnect(self, close_code):
+        await self.update_OnOff(False)
         self.channel_layer.group_discard("broadcastName", self.channel_name)
         self.close()
 
 
     @action()
-    async def gp_send(self, request_id, user_pk, content, **kwargs):
-        await self.channel.group_send(
-            f"_{self.user}_", 
-            {"type": "send.data", "content": content}
-        )
-        return {'response with': 'some message'}, status.HTTP_200_OK
+    async def full_data(self, request_id, **kwargs):
+        full_data = await self.get_full_data()
+        return full_data, status.HTTP_200_OK
+
+
+    @database_sync_to_async
+    def get_full_data(self):
+        result = dict()
+        rooms = Room.objects.filter(members__in=(self.user.id,))
+              
+        for room in rooms.iterator():
+            contact = room.members.exclude(username=self.user.username).first()
+            result[room.id] = {
+                "profile": contact.profile.get_full_data,
+                "messages": [msg.get_full_data for msg in room.messages.all()]
+            }
+
+            try:
+                saved_name = SavedContactName.objects.get(user=contact, chat=room).saved_name
+                result[room.id]['profile']['saved_name'] = saved_name
+            except SavedContactName.DoesNotExist:
+                result[room.id]['profile']['saved_name'] = result[room.id]['profile']['username']
+
+        # print(result)
+        return result
+    
+
+    @database_sync_to_async
+    def update_OnOff(self, is_online):
+        # print(is_online)
+        Profile.objects.filter(user=self.user).update(is_online=is_online)
 
 
 
