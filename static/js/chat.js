@@ -1,66 +1,68 @@
-window.onload = function(){
-    // document.querySelector('.col-xl-9').innerHTML = '';
-}
 // ------------------------------- socket declarations----------------------------------
-try {
-    var chatSock = new WebSocket('ws://' + window.location.host + '/ws/');
-}
-catch (e) {
-    var chatSock = new WebSocket('wss://' + window.location.host + '/ws/');
-}
-try {
-    var roomSock = new WebSocket('ws://' + window.location.host + '/ws/room/');
-}
-catch (e) {
-    var roomSock = new WebSocket('wss://' + window.location.host + '/ws/room/');
-}
-try {
-    var msgSock = new WebSocket('ws://' + window.location.host + '/ws/message/');
-}
-catch (e) {
-    var msgSock = new WebSocket('wss://' + window.location.host + '/ws/message/');
-}
-
+var ws_schema = window.location.protocol === "http:" ? "ws://" : "wss://";
+ws_schema = "ws://";
+var chatSock = new WebSocket(ws_schema + window.location.host + '/ws/');
+var roomSock = new WebSocket(ws_schema + window.location.host + '/ws/room/');
+var msgSock = new WebSocket(ws_schema + window.location.host + '/ws/message/');
 
 // ------------------------------- global variables ----------------------------------
 const sockets = [chatSock, roomSock, msgSock];
 const invalidPhone = document.getElementById('invalidPhone');
-var contactsArea;
-var chatArea;
-var full_data;
-var currentChat;
+var contactsArea, chatArea, full_data, currentChat, lastSeen;
 
 
 // ------------------------------- chat socket ----------------------------------
 chatSock.onopen = function(e){
-    sockAction(0, 'full_data');
+    // sockAction(0, 'full_data');
 }
 chatSock.onmessage = function (e) {
-    response = JSON.parse(e.data)
-    full_data = response.data;
-    contactsArea = document.querySelector('.contacts');
-    chatArea = document.querySelector('.chat-messages');
-    chatArea.innerHTML = '';
-    console.log(full_data);
-    fillContacts(full_data);
+    var response = JSON.parse(e.data);
+    // console.log(response);
+    if(response.action === "full_data"){
+        full_data = response.data;
+        contactsArea = document.querySelector('.contacts');
+        chatArea = document.querySelector('.chat-messages');
+        chatArea.innerHTML = '';
+        
+        Object.keys(full_data).forEach(function(index){
+            fillContacts(full_data[index], index);
+        })
+    }
+    else if(response.action === "update_last_seen"){
+        update_last_seen(response.data);
+    }
 }
 // ------------------------------- room socket ----------------------------------
 roomSock.onopen = function(e){
-    sockAction(1, 'list');
+    // sockAction(1, 'list');
+    // roomSock.send(JSON.stringify({'a':'A'}))
 }
 roomSock.onmessage = function (e) {
     var response = JSON.parse(e.data);
-    // console.log(response);
-    if(response.response_status == 400){
-        invalidPhone.innerText = response.data.message;
-    }
+    console.log(response);
+    // if(response.action === "new_chat"){
+    //     if(response.response_status == 400){
+    //         invalidPhone.innerText = response.data.message;
+    //     }else{
+    //         var index = Object.keys(response.data)[0];
+    //         fillContacts(response.data[index], parseInt(index));
+    //         index = parseInt(index);
+    //         full_data = {
+    //             ...full_data,
+    //             index: response.data[index]
+    //         }
+    //         console.log('new full data:', full_data);
+    //     }
+    // }
 }
 // ------------------------------- message socket ----------------------------------
 msgSock.onopen = function(e){
-    sockAction(2, 'list');
+    // sockAction(2, 'list');
 }
 msgSock.onmessage = function (e) {
+    
     var response = JSON.parse(e.data)
+    console.log(response)
     if(response.action === "list"){
         messages = response.data;
         // console.log(messages);
@@ -124,31 +126,51 @@ function sockAction(...params){
     }  
 }
 
-function fillContacts(data){
-    console.log(contactsArea)
-    Object.keys(data).forEach(function(index){
-        var connection_status = data[index].profile.is_online === true ? 'online':'offline';
+function fillContacts(data, id){
+    var connection_status = data.profile.is_online === true ? 'online':'offline';
         contactsArea.innerHTML += 
-            `<a href="#" onclick="ChangeChat(this.id)" id="c-${index}" class="list-group-item list-group-item-action border-0">
+            `<a href="#" onclick="ChangeChat(this.id)" id="pv-${id}" class="list-group-item list-group-item-action border-0">
                 <div class="badge bg-success float-right">2</div>
                 <div class="d-flex align-items-start">
-                    <img src="${data[index].profile.picture}" class="rounded-circle mr-1" alt="William Harris" width="40" height="40">
+                    <img src="${data.profile.picture}" class="rounded-circle mr-1" alt="William Harris" width="40" height="40">
                     <div class="flex-grow-1 ml-3">
-                        ${data[index].profile.saved_name}
-                        <div class="small"><span class="fas fa-circle chat-${connection_status}"></span> ${connection_status}</div>
+                        ${data.profile.saved_name}
+                        <div class="small"><span class="fas fa-circle chat-${connection_status}"></span><span> ${connection_status}</span></div>
                     </div>
                 </div>
             </a>`;
-    })
 }
 
-function fillMessages(data){
-    console.log(data);
-    var messages = data.messages;
+function fillMessage(message, sender, align, picture){
+        chatArea.innerHTML += 
+        `<div id="${message.id} "class="chat-message-${align} pb-4">
+            <div>
+                <img src="${picture}" class="rounded-circle mr-1" alt="Chris Wood" width="40" height="40">
+                <div class="text-muted small text-nowrap mt-2">2:33 am</div>
+            </div>
+            <div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">
+                <div class="font-weight-bold mb-1">${sender}</div>
+                ${message.content}
+            </div>
+        </div>`;
+}
 
-    Object.keys(messages).forEach(function(index){
-        console.log(messages[index])       
-        sender = messages[index].sender === user ? 'you':messages[index].sender
+function ChangeChat(id){
+    chatArea.innerHTML = '';
+    currentChat = id.split('-')[1];
+    var filteredData = full_data[currentChat];
+    lastSeen = document.getElementById('last-seen');
+
+    document.getElementById('cName').innerText = filteredData.profile.saved_name;
+    document.getElementById('cPicture').src = filteredData.profile.picture;
+    if(filteredData.profile.is_online){
+        lastSeen.innerText = 'online';
+    }else{
+        lastSeen.innerText = `last seen: ${filteredData.profile.last_seen}`;
+    }
+
+    var messages = filteredData.messages;
+    Object.keys(messages).forEach(function(index){     
         if(messages[index].sender === user){
             var sender = 'you';
             var align = 'right';
@@ -156,29 +178,36 @@ function fillMessages(data){
             var sender = messages[index].sender;
             var align = 'left';
         }
-        chatArea.innerHTML += 
-        `<div id="${messages[index].id} "class="chat-message-${align} pb-4">
-            <div>
-                <img src="${data.profile.picture}" class="rounded-circle mr-1" alt="Chris Wood" width="40" height="40">
-                <div class="text-muted small text-nowrap mt-2">2:33 am</div>
-            </div>
-            <div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">
-                <div class="font-weight-bold mb-1">${sender}</div>
-                ${messages[index].content}
-            </div>
-        </div>`;
+        
+        fillMessage(messages[index], sender, align, filteredData.profile.picture);
+       
     })
-   
 }
 
-function ChangeChat(id){
-    console.log(id);
-    chatArea.innerHTML = '';
-    var filteredData = full_data[id.split('-')[1]];
-    document.getElementById('cName').innerText = filteredData.profile.saved_name;
-    document.getElementById('cPicture').src = filteredData.profile.picture;
+function update_last_seen(response){
+    full_data[response.id].profile.is_online = response.is_online;
+    full_data[response.id].profile.last_seen = response.last_seen;
+    
+    var statusElem = document.getElementById(`pv-${response.id}`).getElementsByClassName('small')[0];
+    var statusElemColor = statusElem.getElementsByTagName('span')[0];
+    var statusElemText = statusElem.getElementsByTagName('span')[1];
+        
+    if(response.is_online === true){
+        statusElemText.innerText = ' online';
+        statusElemColor.classList.remove('chat-offline');
+        statusElemColor.classList.add('chat-online');      
+    }else{
+        statusElemText.innerText = ' offline';
+        statusElemColor.classList.add('chat-offline');
+        statusElemColor.classList.remove('chat-online');       
+    }
 
-    fillMessages(filteredData);
+    if(currentChat == response.id){
+        var status = response.is_online === true ? 'online':`last seen: ${response.last_seen}`;
+        lastSeen.innerText = status;
+    }
+
+    // console.log('new full data:', full_data);
 }
 
 function contactForm(){
@@ -201,6 +230,5 @@ function contactForm(){
         inputPhone.value = '';       
     })
 }
-
 
 contactForm()

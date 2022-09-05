@@ -19,8 +19,8 @@ class Room(models.Model):
 
 
 class SavedContactName(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='saved_names')
-    chat = models.ForeignKey(Room, null=True, on_delete=models.SET_NULL, related_name='chat')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE, related_name='saved_names')
+    chat = models.ForeignKey(Room, null=True, on_delete=models.CASCADE, related_name='chat')
     saved_name = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):

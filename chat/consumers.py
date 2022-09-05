@@ -1,8 +1,11 @@
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from importlib.resources import contents
 from djangochannelsrestframework.generics import AsyncAPIConsumer, GenericAsyncAPIConsumer
 from djangochannelsrestframework.decorators import action
 from django.db.models import Count
 from django.core import serializers
 from channels.db import database_sync_to_async
+from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from rest_framework import status
 
@@ -14,10 +17,13 @@ from djangochannelsrestframework.mixins import (
     CreateModelMixin,
     DeleteModelMixin,
 )
+
 from .models import Room, SavedContactName, Message
 from account.models import User, Profile
 from .serializers import RoomSerializer, CNameSerializer, MessageSerializer
 
+from datetime import datetime
+import time
 
 class ChatConsumer(
     GenericAsyncAPIConsumer,
@@ -25,13 +31,13 @@ class ChatConsumer(
 
     async def connect(self):
         self.user = self.scope['user'] 
-        print(self.scope['user'])
+        # print(self.scope['user'])
         if self.user.is_authenticated:
             self.broadcastName = f"_{self.user}_"
             await (self.channel_layer.group_add)(self.broadcastName, self.channel_name)
 
-        self.channel = get_channel_layer()
-        await self.update_OnOff(True)
+        # self.channel = get_channel_layer()
+        # await self.update_OnOff(True)
         await self.accept()
 
 
@@ -56,9 +62,8 @@ class ChatConsumer(
     @database_sync_to_async
     def get_full_data(self):
         result = dict()
-        rooms = Room.objects.filter(members__in=(self.user.id,))
-              
-        for room in rooms.iterator():
+               
+        for room in self.rooms.iterator():
             contact = room.members.exclude(username=self.user.username).first()
             result[room.id] = {
                 "profile": contact.profile.get_full_data,
@@ -75,12 +80,47 @@ class ChatConsumer(
         return result
     
 
+    
+    async def update_OnOff(self, is_online):
+        contacts, rooms = await self.update_OnOffDB(is_online)
+        channel = get_channel_layer()
+
+        for contact, room in zip(contacts, rooms):
+            content = {
+                "id": room.id,
+                "action": "update_last_seen",
+                "username": self.user.username,
+                "is_online": is_online,
+                "last_seen": datetime.now().strftime('%H:%M')
+            }
+
+            await channel.group_send(
+                f"_{contact.username}_",
+                {"type": "send.data", "content": content}
+            )
+        
+       
+
     @database_sync_to_async
-    def update_OnOff(self, is_online):
-        # print(is_online)
-        Profile.objects.filter(user=self.user).update(is_online=is_online)
+    def update_OnOffDB(self, is_online):
+        profile = Profile.objects.filter(user=self.user)
+        profile.update(is_online=is_online)
 
+        if not is_online:
+            profile.update(last_seen=datetime.now())
 
+        self.rooms = Room.objects.filter(members__in=(self.user.id,))
+        contacts = list()
+        rooms = list()
+
+        for room in self.rooms:
+            contact = room.members.exclude(username=self.user.username).first()
+            contacts.append(contact)
+            rooms.append(room)
+
+        return contacts, rooms
+           
+                    
 
 class RoomConsumer(
     ListModelMixin,
@@ -95,21 +135,29 @@ class RoomConsumer(
     queryset = Room.objects.all()
     serializer_class = RoomSerializer
 
-    
     @action()
     async def new_chat(self, request_id, inputs, **kwargs):
-        created, message = await self.add_chat(inputs)
+       
+        content, message = await self.add_chat(inputs)
+        print('content', content)
         resp = {"message": message}
-
-        if created:
+       
+        if content:
             channel = get_channel_layer()
             await channel.group_send(
                 f"_{inputs.get('creator')}_",
                 {"type": "send.data", "content": inputs}
             )
-            return resp, status.HTTP_200_OK
+            return inputs, status.HTTP_200_OK
         else:
-            return resp, status.HTTP_400_BAD_REQUEST
+            return inputs, status.HTTP_400_BAD_REQUEST
+
+    async def send_data(self, event):
+        data = event["content"]
+        # print(data)
+        await self.send_json(data)
+
+
 
     @database_sync_to_async
     def add_chat(self, inputs):        
@@ -130,7 +178,7 @@ class RoomConsumer(
             # print(rooms)
             if rooms.exists():
                 message = "this contact is already in your contacts list!"
-                return False, message
+                return None, message
             else:
                 new_room = Room.objects.create(created_by=creator)             
                 new_room.members.add(creator)
@@ -143,11 +191,17 @@ class RoomConsumer(
                         chat=new_room,
                         saved_name=input_cname,
                     )
+
+                gp_send_content = dict()
+                gp_send_content[str(new_room.id)] = {
+                    "profile": new_contact.profile.get_full_data,
+                    "messages": []
+                }
                 
-                return True, message
+                return gp_send_content, message
         else:
             message = "entered phone number is either invalid or unverified!"
-            return False, message
+            return None, message
 
 
 class MessageConsumer(
@@ -162,5 +216,4 @@ class MessageConsumer(
 
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
-
-  
+   
