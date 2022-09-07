@@ -36,8 +36,8 @@ class ChatConsumer(
             self.broadcastName = f"_{self.user}_"
             await (self.channel_layer.group_add)(self.broadcastName, self.channel_name)
 
-        # self.channel = get_channel_layer()
-        # await self.update_OnOff(True)
+        self.channel = get_channel_layer()
+        await self.update_OnOff(True)
         await self.accept()
 
 
@@ -67,7 +67,9 @@ class ChatConsumer(
             contact = room.members.exclude(username=self.user.username).first()
             result[room.id] = {
                 "profile": contact.profile.get_full_data,
-                "messages": [msg.get_full_data for msg in room.messages.all()]
+                "messages": [msg.get_full_data for msg in room.messages.all()],
+                "unread_count": room.unread_count(self.user),
+
             }
 
             try:
@@ -135,22 +137,16 @@ class RoomConsumer(
     queryset = Room.objects.all()
     serializer_class = RoomSerializer
 
-    @action()
-    async def new_chat(self, request_id, inputs, **kwargs):
-       
-        content, message = await self.add_chat(inputs)
-        print('content', content)
-        resp = {"message": message}
-       
-        if content:
-            channel = get_channel_layer()
-            await channel.group_send(
-                f"_{inputs.get('creator')}_",
-                {"type": "send.data", "content": inputs}
-            )
-            return inputs, status.HTTP_200_OK
-        else:
-            return inputs, status.HTTP_400_BAD_REQUEST
+    async def connect(self):
+        self.user = self.scope['user'] 
+        
+        if self.user.is_authenticated:
+            self.broadcastName = f"{self.user}_ROOM"
+            await (self.channel_layer.group_add)(self.broadcastName, self.channel_name)
+
+        
+        await self.accept()
+
 
     async def send_data(self, event):
         data = event["content"]
@@ -158,6 +154,28 @@ class RoomConsumer(
         await self.send_json(data)
 
 
+    async def disconnect(self, close_code):
+        self.channel_layer.group_discard("broadcastName", self.channel_name)
+        self.close()
+
+
+    @action()
+    async def new_chat(self, request_id, inputs, **kwargs):       
+        content, message = await self.add_chat(inputs)
+        print('content', content)
+        resp = {"message": message}
+       
+        if content:
+            channel = get_channel_layer()
+            await channel.group_send(
+                self.broadcastName,
+                {"type": "send.data", "content": content}
+            )
+            return resp, status.HTTP_200_OK
+        else:
+            return resp, status.HTTP_400_BAD_REQUEST
+
+  
 
     @database_sync_to_async
     def add_chat(self, inputs):        
@@ -185,18 +203,23 @@ class RoomConsumer(
                 new_room.members.add(new_contact)
                 new_room.save()
                 
+                gp_send_content = dict()
+                gp_send_content[str(new_room.id)] = {
+                    "profile": new_contact.profile.get_full_data,
+                    "messages": []
+                }
+                print(gp_send_content)
                 if input_cname:
                     SavedContactName.objects.create(
                         user=new_contact,
                         chat=new_room,
                         saved_name=input_cname,
                     )
+                    gp_send_content[str(new_room.id)]["profile"]["saved_name"] = input_cname
+                else:
+                    gp_send_content[str(new_room.id)]["profile"]["saved_name"] = new_contact.username
 
-                gp_send_content = dict()
-                gp_send_content[str(new_room.id)] = {
-                    "profile": new_contact.profile.get_full_data,
-                    "messages": []
-                }
+                
                 
                 return gp_send_content, message
         else:

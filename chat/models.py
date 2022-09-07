@@ -18,6 +18,10 @@ class Room(models.Model):
         return self.messages.count()
 
 
+    def unread_count(self, user):
+        return  self.messages.filter(seen=False).exclude(sender=user).count()
+
+
 class SavedContactName(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE, related_name='saved_names')
     chat = models.ForeignKey(Room, null=True, on_delete=models.CASCADE, related_name='chat')
@@ -49,11 +53,12 @@ class Message(models.Model):
     
     @property
     def get_full_data(self):
+        delivered_time = self.delivered_time.strftime('%H:%M')
         return {
             "id": self.id,
             "sender": self.sender.username,
             "content": self.content,
             "seen": self.seen,
             "status": self.status,
-            "delivered_time": self.delivered_time.timestamp(),
+            "delivered_time": delivered_time,
         }
