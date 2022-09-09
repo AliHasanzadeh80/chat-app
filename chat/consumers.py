@@ -69,7 +69,6 @@ class ChatConsumer(
                 "profile": contact.profile.get_full_data,
                 "messages": [msg.get_full_data for msg in room.messages.all()],
                 "unread_count": room.unread_count(self.user),
-
             }
 
             try:
@@ -239,4 +238,58 @@ class MessageConsumer(
 
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
-   
+
+    async def connect(self):
+        self.user = self.scope['user'] 
+        if self.user.is_authenticated:
+            self.broadcastName = f"{self.user}_MSG"
+            await (self.channel_layer.group_add)(self.broadcastName, self.channel_name)
+
+        await self.accept()
+
+
+    async def send_data(self, event):
+        data = event["content"]
+        # print(data)
+        await self.send_json(data)
+
+
+    async def disconnect(self, close_code):
+        self.channel_layer.group_discard("broadcastName", self.channel_name)
+        self.close()
+
+
+    @action()
+    async def new_message(self, request_id, inputs, **kwargs):
+        members, pictures, messageID = await self.get_members(inputs)
+        channel = get_channel_layer()
+
+        for member, picture in zip(members, pictures):
+            print('sending to ', member.username)
+            inputs["picture"] = picture
+            inputs["delivered_time"] = datetime.now().strftime('%H:%M')
+            inputs["id"] = messageID
+            inputs["seen"] = False
+
+            await channel.group_send(
+                f"{member.username}_MSG",
+                {"type": "send.data", "content": {"action": "new_message", "data": inputs}}
+            )
+
+        return inputs, status.HTTP_200_OK
+
+
+    @database_sync_to_async
+    def get_members(self, inputs):
+        room = Room.objects.get(id=inputs.get('roomID'))
+        members = room.members.all()
+        pictures = [member.profile.picture.url for member in members]
+        obj = Message.objects.create(
+            room=room,
+            sender=User.objects.get(username=inputs.get('sender')),
+            content=inputs.get('content'),
+            status="delivering",
+        )
+
+        return list(members), list(pictures), obj.id
+       

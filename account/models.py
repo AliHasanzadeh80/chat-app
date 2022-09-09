@@ -1,4 +1,3 @@
-from tkinter.messagebox import NO
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from datetime import datetime
@@ -26,7 +25,7 @@ class Profile(models.Model):
         elif 1 <= sub.days < 365:
             ls_time = self.last_seen.strftime('%b %e, %H:%M')
         else:
-            ls_time = 'a long time ago'
+            ls_time = 'long time ago'
 
         return {
             "username": self.user.username,

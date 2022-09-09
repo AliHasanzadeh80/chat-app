@@ -49,11 +49,44 @@ roomSock.onmessage = function (e) {
 }
 // ------------------------------- message socket ----------------------------------
 msgSock.onopen = function(e){
-    // sockAction(2, 'list');
+   
 }
 msgSock.onmessage = function (e) {   
-    var response = JSON.parse(e.data)
+    var response = JSON.parse(e.data);
     console.log(response)
+    var action = response.action;
+    switch(action){
+        case 'create':
+            var createdDraft = response.data;
+            createdDraft.sender = user;
+            full_data[currentChat].messages.push(createdDraft);
+            break;
+
+        case 'new_message':
+            var new_message = response.data;  
+            var messageID = new_message.id;  
+            if(!response.request_id){
+                console.log(currentChat, new_message.roomID);               
+                if(new_message.sender !== user){
+                    if(currentChat == new_message.roomID){
+                        sockAction(2, 'patch', messageID, {seen: true});
+                    }else{
+                        full_data[new_message.roomID].unread_count += 1;
+                        unreadUpdate(`pv-${new_message.roomID}`, false, full_data[new_message.roomID].unread_count);
+                    }
+                }               
+                full_data[new_message.roomID].messages.push(new_message);
+                if(currentChat == new_message.roomID){
+                    var [sender, align] = getAlign(new_message.sender);
+                    fillMessage(new_message, sender, align, new_message.picture);
+                }
+                console.log(full_data);
+            }else{
+                console.log('status changed', messageID);
+                sockAction(2, 'patch', messageID, {status: "delivered"});
+            }
+            break;
+    }
 }
 
 
@@ -116,17 +149,26 @@ function sockAction(...params){
                 request_id: new Date().getTime(),
             }))
             break;
+
+        case 'new_message':
+            sockets[sockIndex].send(JSON.stringify({
+                action: "new_message",
+                request_id: new Date().getTime(),
+                inputs: params[2]
+            }))
+            break;
     }  
 }
 
 function fillContacts(data, id){
     // console.log('data:', data, 'id', id)
     var connection_status = data.profile.is_online === true ? 'online':'offline';
-    var unread_messages_count = data.unread_count > 0 ? data.unread_count:'';
+    // var unread_messages_count = data.unread_count > 0 ? data.unread_count:'';
+    var visibility = data.unread_count === 0 ? "invisible":"visible";
 
         contactsArea.innerHTML += 
             `<a href="#" onclick="ChangeChat(this.id)" id="pv-${id}" class="list-group-item list-group-item-action border-0">
-                <div class="badge bg-success float-right">${unread_messages_count}</div>
+                <div class="badge bg-success float-right ${visibility}">${data.unread_count}</div>
                 <div class="d-flex align-items-start">
                     <img src="${data.profile.picture}" class="rounded-circle mr-1" alt="William Harris" width="40" height="40">
                     <div class="flex-grow-1 ml-3">
@@ -146,7 +188,7 @@ function fillMessage(message, sender, align, picture){
     }
     else if(message.status === "draft"){
         if(message.sender == user){
-            inputMessage.value = message.content + ' (DRAFT**)';
+            inputMessage.value = message.content;
         }
         return;
     }
@@ -161,14 +203,16 @@ function fillMessage(message, sender, align, picture){
             ${message.content}
         </div>
     </div>`;
+    chatArea.scrollTop = chatArea.scrollHeight;
 }
 
 function ChangeChat(id){
     chatArea.innerHTML = '';
-    var currentChat = id.split('-')[1];
+    currentChat = id.split('-')[1];
+    full_data[currentChat].unread_count = 0;
+    lastSeen = document.getElementById('last-seen');
     var filteredData = full_data[currentChat];
-    var lastSeen = document.getElementById('last-seen');
-    var unread_counter =  document.getElementById(id).querySelector('.badge').innerText;
+    // var unread_counter = document.getElementById(id).querySelector('.badge');
     var messages = filteredData.messages;
     var sender, align;
 
@@ -183,22 +227,43 @@ function ChangeChat(id){
         lastSeen.innerText = `last seen: ${filteredData.profile.last_seen}`;
     }
 
-    Object.keys(messages).forEach(function(index){     
-        if(messages[index].sender === user){
-            sender = 'you';
-            align = 'right';
-        }else{
-            sender = messages[index].sender;
-            align = 'left';
-        }
+    Object.keys(messages).forEach(function(index){   
+        [sender, align] = getAlign(messages[index].sender);
         
         fillMessage(messages[index], sender, align, filteredData.profile.picture);
         
-        if(messages[index].sender != user && unread_counter !== ''){
+        // if(messages[index].sender != user && unread_counter !== ''){
+        //     sockAction(2, 'patch', messages[index].id, {seen: true});
+        //     unread_counter.classList.add('invisible');
+        // } 
+        if(messages[index].sender != user && messages[index].seen === false){
             sockAction(2, 'patch', messages[index].id, {seen: true});
-            unread_counter.classList.add('invisible');
-        } 
+            unreadUpdate(id, true, 0);
+        }
     })
+}
+
+function getAlign(sender){
+    if(sender === user){
+        return ['you', 'right'];      
+    }else{
+        return [sender, 'left'];
+    }
+}
+
+function getUnreadCount(id){
+    return document.getElementById(id).querySelector('.badge').innerText;
+}
+
+function unreadUpdate(id, invisible, newValue){
+    var unread_counter = document.getElementById(id).querySelector('.badge');
+    unread_counter.innerText = newValue;
+    console.log(newValue);
+    if(invisible){
+        unread_counter.classList.add('invisible');
+    }else{
+        unread_counter.classList.remove('invisible');
+    }
 }
 
 function update_last_seen(response){
@@ -228,9 +293,49 @@ function update_last_seen(response){
 
 function liveMsgInput(e){
     var input = inputMessage.value;
-    console.log(input);
-    if(input === ''){
+    var ch_messages = full_data[currentChat].messages;
+    var draftMessage = Object.values(ch_messages.filter(msg => msg.status === "draft" && msg.sender == user));
 
+    if(draftMessage.length === 0){
+        var newDraft = {
+            room: currentChat,
+            sender: userID,
+            content: input,
+            status: "draft",
+        };
+        sockAction(2, 'create', newDraft);
+    }else{
+        var ind = Object.keys(ch_messages).find(k => ch_messages[k] === draftMessage[0]);
+        ch_messages[ind].content = input;
+        if(input){
+            sockAction(2, 'patch', draftMessage[0].id, {content: input});
+        }else{
+            delete ch_messages[ind];
+            sockAction(2, 'delete', draftMessage[0].id);
+        }
+    }
+
+}
+
+function sendMessage(){
+    var input = inputMessage.value;
+    if(input){
+        var ch_messages = full_data[currentChat].messages;
+        var draftMessage = Object.values(ch_messages.filter(msg => msg.status === "draft" && msg.sender == user));
+
+        if(draftMessage.length !== 0){
+            var ind = Object.keys(ch_messages).find(k => ch_messages[k] === draftMessage[0]);
+            delete ch_messages[ind];
+            sockAction(2, 'delete', draftMessage[0].id);
+        }
+
+        var request = {
+            'sender': user,
+            'roomID': currentChat,
+            'content': inputMessage.value
+        };
+        sockAction(2, 'new_message', request);
+        inputMessage.value = '';
     }
 }
 
