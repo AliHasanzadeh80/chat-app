@@ -23,12 +23,8 @@ from account.models import User, Profile
 from .serializers import RoomSerializer, CNameSerializer, MessageSerializer
 
 from datetime import datetime
-import time
 
-class ChatConsumer(
-    GenericAsyncAPIConsumer,
-):
-
+class ChatConsumer(GenericAsyncAPIConsumer):
     async def connect(self):
         self.user = self.scope['user'] 
         # print(self.scope['user'])
@@ -61,14 +57,23 @@ class ChatConsumer(
 
     @database_sync_to_async
     def get_full_data(self):
-        result = dict()
-               
+        result = dict()        
+
         for room in self.rooms.iterator():
             contact = room.members.exclude(username=self.user.username).first()
+            if contact:
+                belongs_to = 'pv'
+                unread_count = room.unread_count(self.user)
+            else:
+                belongs_to = 'sm'
+                contact = room.members.get(username=self.user.username)
+                unread_count = 0;
+               
             result[room.id] = {
-                "profile": contact.profile.get_full_data,
+                "belongs_to": belongs_to,
                 "messages": [msg.get_full_data for msg in room.messages.all()],
-                "unread_count": room.unread_count(self.user),
+                "profile": contact.profile.get_full_data,
+                "unread_count": unread_count,
             }
 
             try:
@@ -114,7 +119,7 @@ class ChatConsumer(
         contacts = list()
         rooms = list()
 
-        for room in self.rooms:
+        for room in self.rooms[1:]:
             contact = room.members.exclude(username=self.user.username).first()
             contacts.append(contact)
             rooms.append(room)
@@ -204,8 +209,10 @@ class RoomConsumer(
                 
                 gp_send_content = dict()
                 gp_send_content[str(new_room.id)] = {
+                    "belongs_to": 'pv',
                     "profile": new_contact.profile.get_full_data,
-                    "messages": []
+                    "messages": [],
+                    "unread_count": 0,
                 }
                 print(gp_send_content)
                 if input_cname:
@@ -217,8 +224,7 @@ class RoomConsumer(
                     gp_send_content[str(new_room.id)]["profile"]["saved_name"] = input_cname
                 else:
                     gp_send_content[str(new_room.id)]["profile"]["saved_name"] = new_contact.username
-
-                
+           
                 
                 return gp_send_content, message
         else:
@@ -266,11 +272,11 @@ class MessageConsumer(
 
         for member, picture in zip(members, pictures):
             print('sending to ', member.username)
-            inputs["picture"] = picture
+            inputs["senderPic"] = picture
             inputs["delivered_time"] = datetime.now().strftime('%H:%M')
             inputs["id"] = messageID
             inputs["seen"] = False
-
+            print(inputs)
             await channel.group_send(
                 f"{member.username}_MSG",
                 {"type": "send.data", "content": {"action": "new_message", "data": inputs}}

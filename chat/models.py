@@ -57,6 +57,7 @@ class Message(models.Model):
         return {
             "id": self.id,
             "sender": self.sender.username,
+            "senderPic": self.sender.profile.picture.url,
             "content": self.content,
             "seen": self.seen,
             "status": self.status,

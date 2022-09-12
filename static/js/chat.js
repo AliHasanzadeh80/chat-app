@@ -6,6 +6,7 @@ var msgSock = new WebSocket(ws_schema + window.location.host + '/ws/message/');
 
 const sockets = [chatSock, roomSock, msgSock];
 const invalidPhone = document.getElementById('invalidPhone');
+const smPic = "images\\sm.png";
 var contactsArea, chatArea, full_data, currentChat, lastSeen, inputMessage;
 
 // ------------------------------- chat socket ----------------------------------
@@ -31,6 +32,7 @@ chatSock.onmessage = function (e) {
 }
 // ------------------------------- room socket ----------------------------------
 roomSock.onopen = function(e){
+
 }
 roomSock.onmessage = function (e) {
     var response = JSON.parse(e.data);
@@ -78,11 +80,11 @@ msgSock.onmessage = function (e) {
                 full_data[new_message.roomID].messages.push(new_message);
                 if(currentChat == new_message.roomID){
                     var [sender, align] = getAlign(new_message.sender);
-                    fillMessage(new_message, sender, align, new_message.picture);
+                    console.log('new msg:', new_message)
+                    fillMessage(new_message, sender, align, new_message.senderPic);
                 }
                 console.log(full_data);
             }else{
-                console.log('status changed', messageID);
                 sockAction(2, 'patch', messageID, {status: "delivered"});
             }
             break;
@@ -161,25 +163,27 @@ function sockAction(...params){
 }
 
 function fillContacts(data, id){
-    // console.log('data:', data, 'id', id)
+    // console.log('data:', data, 'id', id);
     var connection_status = data.profile.is_online === true ? 'online':'offline';
     // var unread_messages_count = data.unread_count > 0 ? data.unread_count:'';
-    var visibility = data.unread_count === 0 ? "invisible":"visible";
-
-        contactsArea.innerHTML += 
-            `<a href="#" onclick="ChangeChat(this.id)" id="pv-${id}" class="list-group-item list-group-item-action border-0">
-                <div class="badge bg-success float-right ${visibility}">${data.unread_count}</div>
-                <div class="d-flex align-items-start">
-                    <img src="${data.profile.picture}" class="rounded-circle mr-1" alt="William Harris" width="40" height="40">
-                    <div class="flex-grow-1 ml-3">
-                        ${data.profile.saved_name}
-                        <div class="small">
-                            <span class="fas fa-circle chat-${connection_status}"></span>
-                            <span> ${connection_status}</span>
-                        </div>
+    var CounterVisibility = data.unread_count === 0 ? "invisible":"visible";
+    var ConStatusVisibility = data.belongs_to === 'pv' ? "visible":"invisible";
+    var profPic = data.belongs_to === 'pv' ? data.profile.picture:smPic;
+    
+    contactsArea.innerHTML += 
+        `<a href="#" onclick="ChangeChat(this.id)" id="pv-${id}" class="list-group-item list-group-item-action border-0">
+            <div class="badge bg-success float-right ${CounterVisibility}">${data.unread_count}</div>
+            <div class="d-flex align-items-start">
+                <img src="${profPic}" class="rounded-circle mr-1" alt="William Harris" width="40" height="40">
+                <div class="flex-grow-1 ml-3">
+                    ${data.profile.saved_name}
+                    <div class="small ${ConStatusVisibility}">
+                        <span class="fas fa-circle chat-${connection_status}"></span>
+                        <span id="con-${id}"> ${connection_status}</span>
                     </div>
                 </div>
-            </a>`;
+            </div>
+        </a>`;
 }
 
 function fillMessage(message, sender, align, picture){
@@ -195,7 +199,7 @@ function fillMessage(message, sender, align, picture){
     chatArea.innerHTML += 
     `<div id="${message.id} "class="chat-message-${align} pb-4">
         <div>
-            <img src="${picture}" class="rounded-circle mr-1" alt="Chris Wood" width="40" height="40">
+            <img src="${picture}" class="rounded-circle mr-1" alt="sender-pic" width="40" height="40">
             <div class="text-muted small text-nowrap mt-2">${message.delivered_time}</div>
         </div>
         <div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">
@@ -208,6 +212,8 @@ function fillMessage(message, sender, align, picture){
 
 function ChangeChat(id){
     chatArea.innerHTML = '';
+    inputMessage = document.getElementById('input-msg');
+    inputMessage.value = '';
     currentChat = id.split('-')[1];
     full_data[currentChat].unread_count = 0;
     lastSeen = document.getElementById('last-seen');
@@ -217,20 +223,23 @@ function ChangeChat(id){
     var sender, align;
 
     document.getElementById('cName').innerText = filteredData.profile.saved_name;
-    document.getElementById('cPicture').src = filteredData.profile.picture;
-    inputMessage = document.getElementById('input-msg');
-    inputMessage.value = '';
 
-    if(filteredData.profile.is_online){
-        lastSeen.innerText = 'online';
-    }else{
-        lastSeen.innerText = `last seen: ${filteredData.profile.last_seen}`;
-    }
+   if(filteredData.belongs_to === 'pv'){
+        document.getElementById('cPicture').src = filteredData.profile.picture;
+        if(filteredData.profile.is_online){
+            lastSeen.innerText = 'online';
+        }else{
+            lastSeen.innerText = `last seen: ${filteredData.profile.last_seen}`;
+        }
+   }else{
+        document.getElementById('cPicture').src = smPic;
+        lastSeen.innerText = '';
+   }
 
     Object.keys(messages).forEach(function(index){   
         [sender, align] = getAlign(messages[index].sender);
         
-        fillMessage(messages[index], sender, align, filteredData.profile.picture);
+        fillMessage(messages[index], sender, align, messages[index].senderPic);
         
         // if(messages[index].sender != user && unread_counter !== ''){
         //     sockAction(2, 'patch', messages[index].id, {seen: true});
@@ -302,6 +311,7 @@ function liveMsgInput(e){
             sender: userID,
             content: input,
             status: "draft",
+            seen: true,
         };
         sockAction(2, 'create', newDraft);
     }else{
