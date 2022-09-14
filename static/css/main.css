@@ -127,3 +127,14 @@ body{margin-top:20px;}
     .sidenav {padding-top: 15px;}
     .sidenav a {font-size: 18px;}
   }
+
+
+.modal-md{
+    width: 350px;
+    margin: auto;
+}
+.info_profile{
+    max-width: 80%;
+    max-height: 130px;
+    margin-bottom: 10px;
+}

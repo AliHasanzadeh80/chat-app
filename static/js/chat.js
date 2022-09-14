@@ -42,6 +42,9 @@ roomSock.onmessage = function (e) {
             invalidPhone.innerText = response.data.message;
         }
     }
+    else if(response.action === "update_contact"){
+        console.log('another action!')
+    }
     else{
         var index = Object.keys(response)[0];
         fillContacts(response[index], index);
@@ -159,6 +162,14 @@ function sockAction(...params){
                 inputs: params[2]
             }))
             break;
+
+        case 'update_contact':
+            sockets[sockIndex].send(JSON.stringify({
+                action: "update_contact",
+                request_id: new Date().getTime(),
+                inputs: params[2]
+            }))
+            break;
     }  
 }
 
@@ -176,7 +187,7 @@ function fillContacts(data, id){
             <div class="d-flex align-items-start">
                 <img src="${profPic}" class="rounded-circle mr-1" alt="William Harris" width="40" height="40">
                 <div class="flex-grow-1 ml-3">
-                    ${data.profile.saved_name}
+                    <div class="username">${data.profile.saved_name}</div>
                     <div class="small ${ConStatusVisibility}">
                         <span class="fas fa-circle chat-${connection_status}"></span>
                         <span id="con-${id}"> ${connection_status}</span>
@@ -368,6 +379,35 @@ function contactForm(){
         inputName.value = '';
         inputPhone.value = '';       
     })
+}
+
+function contactInfo(){
+    console.log(currentChat);
+    var filteredData = full_data[currentChat];
+    console.log(filteredData)
+    var form = document.getElementById('contact-info').getElementsByClassName('form-group2');
+    form[0].getElementsByTagName('img')[0].src = filteredData.profile.picture;
+    form[1].getElementsByTagName('input')[0].value = filteredData.profile.saved_name;
+    form[2].getElementsByTagName('input')[0].value = filteredData.profile.username;
+    form[3].getElementsByTagName('input')[0].value = filteredData.profile.phone;
+    form[4].getElementsByTagName('input')[0].value = filteredData.profile.date_joined;
+    form[5].getElementsByTagName('textarea')[0].value = filteredData.profile.bio;
+}
+
+function saveContactInfo(){
+    var newCName = document.getElementById('info-cName').value;
+    if(newCName !== full_data[currentChat].profile.saved_name){
+        console.log('true');
+        sockAction(1, 'update_contact', {
+            roomID: currentChat,
+            newCName: newCName,
+        })
+        document.getElementById(`pv-${currentChat}`).querySelector('.username').innerText = newCName;
+        document.getElementById('cName').innerText = newCName;
+        full_data[currentChat].profile.saved_name = newCName;
+    }else{
+        console.log('false')
+    }
 }
 
 contactForm()

@@ -1,6 +1,7 @@
 {% extends 'chat/home.html' %}
 {% block addcontact %}
 {% load static %}
+{% load crispy_forms_tags %}
 <div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
@@ -28,7 +29,6 @@
               <input type="checkbox" class="form-check-input" id="custom-or-another" onchange="checkBX()">
               <label class="form-check-label" for="custom-or-another">use contact's original name</label>
               <small id="invalidPhone" class="form-text text-danger"></small>
-
             </div>
             <div class="modal-footer">
                 <br>
@@ -41,6 +41,48 @@
         
     </div>
     </div>				
+</div>
+<!-- -------------- -->
+<div class="modal fade modal-md" id="ContactInfoModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+  <div class="modal-content">
+      <div class="modal-body">
+       <!-- form -->
+       <form id="contact-info">
+        <div class="form-group2">
+          <img src="images/sm.png" class="info_profile">
+        </div>       
+        <div class="form-group2">
+          <label>contact name</label>
+          <input type="text" id="info-cName" class="form-control">
+        </div>
+        <div class="form-group2">
+          <label>username</label>
+          <input type="text" class="form-control" disabled>
+        </div>
+        <div class="form-group2">
+          <label>phone number</label>
+          <input type="text" class="form-control" disabled>
+        </div>
+        <div class="form-group2">
+          <label>date joined</label>
+          <input type="text" class="form-control" disabled>
+        </div>
+        <div class="form-group2">
+          <label>bio</label>
+          <textarea class="form-control" rows="4" cols="50" disabled></textarea>
+        </div>
+        <div class="modal-footer">
+            <br>
+            <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+            <button type="submit" onclick="saveContactInfo()" class="btn btn-primary btn-sm">Save</button>
+        </div>
+    </form>
+      <!-- end form -->
+      </div>
+      
+  </div>
+  </div>				
 </div>
 <script>
 	const user = '{{ request.user }}';

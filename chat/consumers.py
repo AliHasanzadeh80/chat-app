@@ -232,6 +232,23 @@ class RoomConsumer(
             return None, message
 
 
+
+    @action()
+    async def update_contact(self, request_id, inputs, **kwargs):       
+        await self.update_contactDB(inputs)
+       
+        return inputs, status.HTTP_200_OK
+
+
+    @database_sync_to_async
+    def update_contactDB(self, inputs):
+        contact = Room.objects.get(id=inputs.get('roomID')).members.exclude(username=self.user.username).first()
+        SavedContactName.objects.filter(
+            user=contact, 
+            chat=inputs.get('roomID')
+        ).update(saved_name=inputs.get('newCName'))
+       
+
 class MessageConsumer(
     ListModelMixin,
     RetrieveModelMixin,

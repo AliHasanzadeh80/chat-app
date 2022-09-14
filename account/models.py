@@ -31,6 +31,7 @@ class Profile(models.Model):
             "username": self.user.username,
             "picture": self.picture.url,
             "bio": self.bio,
+            "phone": self.user.phone,
             "date_joined": dj_time,
             "last_seen": ls_time,
             "is_online": self.is_online,
