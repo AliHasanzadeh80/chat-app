@@ -382,12 +382,17 @@ function contactForm(){
 }
 
 function contactInfo(){
-    console.log(currentChat);
     var filteredData = full_data[currentChat];
-    console.log(filteredData)
     var form = document.getElementById('contact-info').getElementsByClassName('form-group2');
+    var saved_name = form[1].getElementsByTagName('input')[0];
     form[0].getElementsByTagName('img')[0].src = filteredData.profile.picture;
-    form[1].getElementsByTagName('input')[0].value = filteredData.profile.saved_name;
+    if(filteredData.belongs_to !== 'sm'){
+        saved_name.value = filteredData.profile.saved_name;
+        saved_name.disabled = false;
+    }else{
+        saved_name.value = '';
+        saved_name.disabled = true;
+    }
     form[2].getElementsByTagName('input')[0].value = filteredData.profile.username;
     form[3].getElementsByTagName('input')[0].value = filteredData.profile.phone;
     form[4].getElementsByTagName('input')[0].value = filteredData.profile.date_joined;

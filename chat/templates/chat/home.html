@@ -3,7 +3,6 @@
 {% load static %}
 <main class="content">
     <div class="container p-0">
-        <p><a href="{% url 'account-logout' %}">logout {{ request.user.username }}</a></p>
 		<div class="card">
 			<div class="row g-0">
 				<div class="col-12 col-lg-5 col-xl-3 border-right">
@@ -17,6 +16,8 @@
 									<a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
 									<br>
 										<a href="" data-toggle="modal" data-target="#exampleModalCenter">Add contact</a>
+										<a href="" data-toggle="modal" data-target="#Profile">Profile</a>
+										<a href="{% url 'account-logout' %}">Logout {{ request.user.username }}</a>
 										<a href="#">Services</a>
 										<a href="#">Clients</a>
 										<a href="#">Contact</a>					
