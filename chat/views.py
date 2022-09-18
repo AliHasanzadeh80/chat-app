@@ -1,4 +1,3 @@
-from multiprocessing import context
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
@@ -6,11 +5,10 @@ from django.contrib import messages
 from account.decorators import verification_required
 from account.forms import ProfileUpdateForm, UserUpdateForm
 
+
 @login_required
 @verification_required
 def home(request):
-    print(request.method)
-    # messages.success(request, f"Logged in as {request.user.username}")   
     if request.method == 'POST':
         user_update_form = UserUpdateForm(request.POST, instance=request.user)
         profile_update_form = ProfileUpdateForm(

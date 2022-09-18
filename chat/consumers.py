@@ -292,6 +292,7 @@ class MessageConsumer(
             inputs["senderPic"] = picture
             inputs["delivered_time"] = datetime.now().strftime('%H:%M')
             inputs["id"] = messageID
+            inputs["status"] = "delivered"
             inputs["seen"] = False
             print(inputs)
             await channel.group_send(
@@ -303,16 +304,32 @@ class MessageConsumer(
 
 
     @database_sync_to_async
-    def get_members(self, inputs):
+    def get_members(self, inputs, new_message=True):
         room = Room.objects.get(id=inputs.get('roomID'))
         members = room.members.all()
-        pictures = [member.profile.picture.url for member in members]
-        obj = Message.objects.create(
-            room=room,
-            sender=User.objects.get(username=inputs.get('sender')),
-            content=inputs.get('content'),
-            status="delivering",
-        )
 
-        return list(members), list(pictures), obj.id
+        if new_message:
+            pictures = [member.profile.picture.url for member in members]
+            obj = Message.objects.create(
+                room=room,
+                sender=User.objects.get(username=inputs.get('sender')),
+                content=inputs.get('content'),
+                status="delivering",
+            )
+            return list(members), list(pictures), obj.id
+        else:
+            print(self.user.username, inputs)
+            return members.exclude(username=self.user.username).first()
+
+
+    @action()
+    async def message_status(self, request_id, inputs, **kwargs):
+        contact = await self.get_members(inputs, False)
+        channel = get_channel_layer()
+        await channel.group_send(
+            f"{contact.username}_MSG",
+            {"type": "send.data", "content": {"action": "message_status", "data": inputs}}
+        )
+       
+        return inputs, status.HTTP_200_OK
        

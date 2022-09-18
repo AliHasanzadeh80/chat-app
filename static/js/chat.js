@@ -6,12 +6,17 @@ var msgSock = new WebSocket(ws_schema + window.location.host + '/ws/message/');
 
 const sockets = [chatSock, roomSock, msgSock];
 const invalidPhone = document.getElementById('invalidPhone');
+const conStatus = document.getElementById('connection-status');
 const smPic = "images\\sm.png";
 var contactsArea, chatArea, full_data, currentChat, lastSeen, inputMessage;
 
 // ------------------------------- chat socket ----------------------------------
 chatSock.onopen = function(e){
+    update_connection_status(true);
     sockAction(0, 'full_data');
+}
+chatSock.onclose = function(e){
+    update_connection_status(false);
 }
 chatSock.onmessage = function (e) {
     var response = JSON.parse(e.data);
@@ -75,15 +80,18 @@ msgSock.onmessage = function (e) {
                 if(new_message.sender !== user){
                     if(currentChat == new_message.roomID){
                         sockAction(2, 'patch', messageID, {seen: true});
+                        sockAction(2, 'message_status', {
+                            roomID: new_message.roomID,
+                            messageID: messageID,
+                        })
                     }else{
                         full_data[new_message.roomID].unread_count += 1;
                         unreadUpdate(`pv-${new_message.roomID}`, false, full_data[new_message.roomID].unread_count);
                     }
                 }               
                 full_data[new_message.roomID].messages.push(new_message);
-                if(currentChat == new_message.roomID){
+                if(currentChat === new_message.roomID){
                     var [sender, align] = getAlign(new_message.sender);
-                    console.log('new msg:', new_message)
                     fillMessage(new_message, sender, align, new_message.senderPic);
                 }
                 console.log(full_data);
@@ -91,9 +99,34 @@ msgSock.onmessage = function (e) {
                 sockAction(2, 'patch', messageID, {status: "delivered"});
             }
             break;
+
+        case 'message_status':
+            if(!response.request_id){
+                var messages = full_data[response.data.roomID].messages;
+                var index = Object.keys(messages).find(k => messages[k].id === response.data.messageID);
+
+                full_data[response.data.roomID].messages[index].seen = true;
+
+                if(response.data.roomID === currentChat){
+                    document.getElementById(response.data.messageID).querySelector('.message-ticks').src = 'images/seen.png';
+                }
+                console.log('new full', full_data);
+            }
+            break;
     }
 }
 
+function update_connection_status(connected){
+    if(connected){
+        conStatus.innerText = 'connected';
+        conStatus.classList.remove('text-danger');
+        conStatus.classList.add('text-success');
+    }else{
+        conStatus.innerText = 'disconnected';
+        conStatus.classList.remove('text-success');
+        conStatus.classList.add('text-danger');
+    }
+}
 
 function sockAction(...params){
     // num, action, pk, data
@@ -170,6 +203,14 @@ function sockAction(...params){
                 inputs: params[2]
             }))
             break;
+
+        case 'message_status':
+            sockets[sockIndex].send(JSON.stringify({
+                action: "message_status",
+                request_id: new Date().getTime(),
+                inputs: params[2]
+            }))
+            break;
     }  
 }
 
@@ -207,57 +248,79 @@ function fillMessage(message, sender, align, picture){
         }
         return;
     }
+    var tickVisibility = message.sender == user ? "visible":"invisible";   
+    var messageTick = message.seen === true ? 'images/seen.png':`images/${message.status}.png`;
+    
     chatArea.innerHTML += 
-    `<div id="${message.id} "class="chat-message-${align} pb-4">
+    `<div id="${message.id}"class="chat-message-${align} pb-4">
         <div>
             <img src="${picture}" class="rounded-circle mr-1" alt="sender-pic" width="40" height="40">
             <div class="text-muted small text-nowrap mt-2">${message.delivered_time}</div>
         </div>
         <div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">
             <div class="font-weight-bold mb-1">${sender}</div>
-            ${message.content}
+            ${messageFormat(message.content)}
+            <br>
+            <img src="${messageTick}" class="message-ticks ${tickVisibility}">
         </div>
+        
     </div>`;
     chatArea.scrollTop = chatArea.scrollHeight;
 }
 
+function messageFormat(message){
+    var maxLength = 30;
+
+    if(message.length <= maxLength)
+        return message;
+    var reg = new RegExp(".{1," + maxLength + "}","g");
+    var parts = message.match(reg);
+    return parts.join('\n');
+}
+
+
 function ChangeChat(id){
     chatArea.innerHTML = '';
     inputMessage = document.getElementById('input-msg');
+    document.querySelector('.flex-grow-0').classList.remove("invisible");
+    document.querySelector('.ch-header').classList.remove("invisible");
+    document.querySelector('.socials').innerHTML = '';
     inputMessage.value = '';
     currentChat = id.split('-')[1];
     full_data[currentChat].unread_count = 0;
     lastSeen = document.getElementById('last-seen');
+
+    var profilePic = document.getElementById('cPicture');
     var filteredData = full_data[currentChat];
-    // var unread_counter = document.getElementById(id).querySelector('.badge');
     var messages = filteredData.messages;
     var sender, align;
 
+    profilePic.classList.remove("invisible");
     document.getElementById('cName').innerText = filteredData.profile.saved_name;
 
-   if(filteredData.belongs_to === 'pv'){
-        document.getElementById('cPicture').src = filteredData.profile.picture;
+    if(filteredData.belongs_to === 'pv'){
+        profilePic.src = filteredData.profile.picture;
         if(filteredData.profile.is_online){
             lastSeen.innerText = 'online';
         }else{
             lastSeen.innerText = `last seen: ${filteredData.profile.last_seen}`;
         }
-   }else{
-        document.getElementById('cPicture').src = smPic;
+    }else{
+        profilePic.src = smPic;
         lastSeen.innerText = '';
-   }
+    }
 
     Object.keys(messages).forEach(function(index){   
         [sender, align] = getAlign(messages[index].sender);
         
         fillMessage(messages[index], sender, align, messages[index].senderPic);
-        
-        // if(messages[index].sender != user && unread_counter !== ''){
-        //     sockAction(2, 'patch', messages[index].id, {seen: true});
-        //     unread_counter.classList.add('invisible');
-        // } 
+      
         if(messages[index].sender != user && messages[index].seen === false){
             sockAction(2, 'patch', messages[index].id, {seen: true});
+            sockAction(2, 'message_status', {
+                roomID: currentChat,
+                messageID: messages[index].id,
+            })
             unreadUpdate(id, true, 0);
         }
     })

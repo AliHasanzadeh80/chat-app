@@ -2,5 +2,3 @@
 /account/migrations/
 /chat/migrations/
 db.sqlite3
-*.png
-*.jpg

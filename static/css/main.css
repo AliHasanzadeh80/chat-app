@@ -138,3 +138,8 @@ body{margin-top:20px;}
     max-height: 130px;
     margin-bottom: 10px;
 }
+
+.message-ticks{
+    width: 15px;
+    height: 15px;
+}
