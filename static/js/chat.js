@@ -83,6 +83,7 @@ msgSock.onmessage = function (e) {
                         sockAction(2, 'message_status', {
                             roomID: new_message.roomID,
                             messageID: messageID,
+                            action: "message_status",
                         })
                     }else{
                         full_data[new_message.roomID].unread_count += 1;
@@ -111,6 +112,23 @@ msgSock.onmessage = function (e) {
                     document.getElementById(response.data.messageID).querySelector('.message-ticks').src = 'images/seen.png';
                 }
                 console.log('new full', full_data);
+            }
+            break;
+
+        case 'delete_message':
+            if(!response.request_id){
+                var messages = full_data[response.data.roomID].messages;
+                var index = Object.keys(messages).find(k => messages[k].id === response.data.messageID);
+                delete full_data[response.data.roomID].messages[index];
+
+                if(response.data.roomID === currentChat){
+                    document.getElementById(response.data.messageID).remove();
+                }else{
+                    if(getUnreadCount(`pv-${response.data.roomID}`) > 0){
+                        full_data[response.data.roomID].unread_count -- ;
+                        unreadUpdate(`pv-${response.data.roomID}`, false, full_data[response.data.roomID].unread_count)
+                    }                       
+                }
             }
             break;
     }
@@ -211,6 +229,7 @@ function sockAction(...params){
                 inputs: params[2]
             }))
             break;
+
     }  
 }
 
@@ -248,20 +267,37 @@ function fillMessage(message, sender, align, picture){
         }
         return;
     }
-    var tickVisibility = message.sender == user ? "visible":"invisible";   
     var messageTick = message.seen === true ? 'images/seen.png':`images/${message.status}.png`;
+    var optionsVisibility, tickHTML;
+
+    if(message.sender == user){
+        optionsVisibility = "visible";
+        tickHTML = `<img src="${messageTick}" class="message-ticks">`;
+    }else{
+        optionsVisibility = "invisible";
+        tickHTML = '';
+    }
     
     chatArea.innerHTML += 
     `<div id="${message.id}"class="chat-message-${align} pb-4">
         <div>
             <img src="${picture}" class="rounded-circle mr-1" alt="sender-pic" width="40" height="40">
             <div class="text-muted small text-nowrap mt-2">${message.delivered_time}</div>
+
+            <div class="dropdown">
+            <i class="fa fa-ellipsis-h ${optionsVisibility}" aria-hidden="true" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></i>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <button class="dropdown-item" onclick="deleteMessage(${message.id})" type="button">delete</button>
+                <button class="dropdown-item" type="button">forward</button>
+            </div>
+            
+            </div>
         </div>
         <div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">
             <div class="font-weight-bold mb-1">${sender}</div>
-            ${messageFormat(message.content)}
+            <span class="msg-content">${messageFormat(message.content)}</span>
             <br>
-            <img src="${messageTick}" class="message-ticks ${tickVisibility}">
+            ${tickHTML}
         </div>
         
     </div>`;
@@ -275,7 +311,24 @@ function messageFormat(message){
         return message;
     var reg = new RegExp(".{1," + maxLength + "}","g");
     var parts = message.match(reg);
+
     return parts.join('\n');
+}
+
+function deleteMessage(id){
+    var messages = full_data[currentChat].messages;
+    var index = Object.keys(messages).find(k => messages[k].id === id);
+
+    document.getElementById(id).remove();
+    delete full_data[currentChat].messages[index];
+
+    sockAction(2, 'message_status', {
+        roomID: currentChat,
+        messageID: id,
+        action: "delete_message",
+    })
+
+    sockAction(2, 'delete', id);
 }
 
 
@@ -320,6 +373,7 @@ function ChangeChat(id){
             sockAction(2, 'message_status', {
                 roomID: currentChat,
                 messageID: messages[index].id,
+                action: "message_status",
             })
             unreadUpdate(id, true, 0);
         }
@@ -341,7 +395,7 @@ function getUnreadCount(id){
 function unreadUpdate(id, invisible, newValue){
     var unread_counter = document.getElementById(id).querySelector('.badge');
     unread_counter.innerText = newValue;
-    console.log(newValue);
+    
     if(invisible){
         unread_counter.classList.add('invisible');
     }else{
