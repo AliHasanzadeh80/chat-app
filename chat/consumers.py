@@ -326,10 +326,11 @@ class MessageConsumer(
         print(inputs)
         contact = await self.get_members(inputs, False)
         channel = get_channel_layer()
-        await channel.group_send(
-            f"{contact.username}_MSG",
-            {"type": "send.data", "content": {"action": inputs.get("action"), "data": inputs}}
-        )
+        if contact:
+            await channel.group_send(
+                f"{contact.username}_MSG",
+                {"type": "send.data", "content": {"action": inputs.get("action"), "data": inputs}}
+            )
        
         return inputs, status.HTTP_200_OK
        

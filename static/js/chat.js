@@ -8,7 +8,8 @@ const sockets = [chatSock, roomSock, msgSock];
 const invalidPhone = document.getElementById('invalidPhone');
 const conStatus = document.getElementById('connection-status');
 const smPic = "images\\sm.png";
-var contactsArea, chatArea, full_data, currentChat, lastSeen, inputMessage;
+var contactsArea, chatArea, full_data, currentChat, lastSeen, inputMessage, forwardModal, fwMessage;
+var selectedContacts = [];
 
 // ------------------------------- chat socket ----------------------------------
 chatSock.onopen = function(e){
@@ -271,10 +272,10 @@ function fillMessage(message, sender, align, picture){
     var optionsVisibility, tickHTML;
 
     if(message.sender == user){
-        optionsVisibility = "visible";
+        deleteBtn = `<button class="dropdown-item" onclick="deleteMessage(${message.id})" type="button">delete</button>`;
         tickHTML = `<img src="${messageTick}" class="message-ticks">`;
     }else{
-        optionsVisibility = "invisible";
+        deleteBtn = '';
         tickHTML = '';
     }
     
@@ -285,17 +286,17 @@ function fillMessage(message, sender, align, picture){
             <div class="text-muted small text-nowrap mt-2">${message.delivered_time}</div>
 
             <div class="dropdown">
-            <i class="fa fa-ellipsis-h ${optionsVisibility}" aria-hidden="true" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></i>
+            <i class="fa fa-ellipsis-h" aria-hidden="true" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></i>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                <button class="dropdown-item" onclick="deleteMessage(${message.id})" type="button">delete</button>
-                <button class="dropdown-item" type="button">forward</button>
+                ${deleteBtn}
+                <button class="dropdown-item" onclick="openForward(${message.id})" data-toggle="modal" data-target="#Forward" type="button">forward</button>
             </div>
             
             </div>
         </div>
         <div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">
             <div class="font-weight-bold mb-1">${sender}</div>
-            <span class="msg-content">${messageFormat(message.content)}</span>
+            <span class="msg-content" id="msg-${message.id}">${messageFormat(message.content)}</span>
             <br>
             ${tickHTML}
         </div>
@@ -329,6 +330,56 @@ function deleteMessage(id){
     })
 
     sockAction(2, 'delete', id);
+}
+
+function openForward(messageID){
+    fwMessage = document.getElementById(`msg-${messageID}`).innerText;
+    console.log(fwMessage)
+    forwardModal = document.getElementById('forward-contacts');
+    forwardModal.innerHTML = '';
+    
+    Object.keys(full_data).forEach(function(index){
+        forwardModal.innerHTML += `
+            <a href="#" onclick="forwardActivate(this)" id="fw-${index}" class="list-group-item list-group-item-action border-0">
+            <div class="badge bg-success float-right"></div>
+            <div class="d-flex align-items-start">
+                <img src="${full_data[index].profile.picture}" class="rounded-circle mr-1" alt="William Harris" width="40" height="40">
+                <div class="flex-grow-1 ml-3">
+                    <div class="username">${full_data[index].profile.saved_name}</div>
+                    <div class="small">
+                    </div>
+                </div>
+            </div>
+        </a>`;
+    })   
+}
+
+function forwardActivate(obj){
+    var id = obj.id.split('-')[1];
+
+    if(obj.classList.contains('active')){
+      obj.classList.remove('active');
+      selectedContacts.splice(selectedContacts.indexOf(id), 1);
+    }else{
+      obj.classList.add('active');
+      selectedContacts.push(id);
+    }
+  }
+
+function forwardMessage(obj){
+    console.log(selectedContacts);
+    selectedContacts.forEach(function(room, index){
+        console.log('sending to room:', room)
+        var request = {
+            'sender': user,
+            'roomID': room,
+            'content': fwMessage,
+        };
+        sockAction(2, 'new_message', request);
+    })    
+
+    // document.getElementById('Forward').style.display = 'none';
+    selectedContacts = [];
 }
 
 

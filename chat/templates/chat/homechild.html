@@ -120,6 +120,25 @@
   </div>
   </div>				
 </div>
+<!-- ------------------ -->
+<div class="modal fade" id="Forward" tabindex="-1" role="dialog" aria-labelledby="Forward" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+  <div class="modal-content">
+      <div class="modal-header">
+      </div>
+      <div class="modal-body" id="forward-contacts">
+      
+      </div>
+      <div class="modal-footer">
+        <br>
+        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm" onclick="forwardMessage()">forward</button>
+    </div>
+  </form>
+      
+  </div>
+  </div>				
+</div>
 <script>
 	const user = '{{ request.user }}';
 	const username = '{{ request.user.username }}';
