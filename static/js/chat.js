@@ -389,6 +389,7 @@ function ChangeChat(id){
     document.querySelector('.flex-grow-0').classList.remove("invisible");
     document.querySelector('.ch-header').classList.remove("invisible");
     document.querySelector('.socials').innerHTML = '';
+    document.getElementById('delete-chatBtn').style.display = 'none';
     inputMessage.value = '';
     currentChat = id.split('-')[1];
     full_data[currentChat].unread_count = 0;
@@ -581,6 +582,20 @@ function saveContactInfo(){
     }else{
         console.log('false')
     }
+}
+
+function clearChat(){
+    var messages = full_data[currentChat].messages;
+    chatArea.innerHTML = '';
+    Object.keys(messages).forEach(function(index){
+        sockAction(2, 'delete', messages[index].id);
+    })
+    full_data[currentChat].messages = [];  
+}
+
+function deleteChat(){
+    sockAction(1, 'delete', currentChat);
+    location.reload();
 }
 
 contactForm()
