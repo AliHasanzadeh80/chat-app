@@ -125,6 +125,17 @@ class ChatConsumer(GenericAsyncAPIConsumer):
             rooms.append(room)
 
         return contacts, rooms
+
+
+    @action()
+    async def delete_account(self, request_id, **kwargs):
+        print('deleting account..')
+        await self.delete_accountDB()    
+        return status.HTTP_200_OK
+
+    @database_sync_to_async 
+    def delete_accountDB(self):
+        self.user.delete()
            
                     
 

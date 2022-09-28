@@ -231,6 +231,13 @@ function sockAction(...params){
             }))
             break;
 
+        case 'delete_account':
+            sockets[sockIndex].send(JSON.stringify({
+                action: "delete_account",
+                request_id: new Date().getTime(),
+            }))
+            break;
+
     }  
 }
 
@@ -256,6 +263,24 @@ function fillContacts(data, id){
                 </div>
             </div>
         </a>`;
+}
+
+function searchContact(){
+    var txtValue, wholeElem;
+    var input = document.getElementById('search-contact');
+    var filter = input.value.toUpperCase();
+    var ul = document.querySelector('.contacts');
+    var li = ul.getElementsByClassName('username');
+    
+    for (let i = 0; i < li.length; i++) {
+        wholeElem = li[i].parentElement.parentElement.parentElement;
+        txtValue = li[0].textContent || li[0].innerText;
+        if(txtValue.toUpperCase().indexOf(filter) > -1){
+            wholeElem.style.display = "";
+        }else{
+            wholeElem.style.display = "none";
+        }
+    }
 }
 
 function fillMessage(message, sender, align, picture){
@@ -590,12 +615,18 @@ function clearChat(){
     Object.keys(messages).forEach(function(index){
         sockAction(2, 'delete', messages[index].id);
     })
-    full_data[currentChat].messages = [];  
+    full_data[currentChat].messages = [];
+    document.getElementById('clearChatClose').setAttribute("data-dismiss", "modal");
 }
 
 function deleteChat(){
     sockAction(1, 'delete', currentChat);
     location.reload();
+}
+
+function deleteAccount(){
+    sockAction(0, 'delete_account')
+    window.location.replace("account/register/");
 }
 
 contactForm()
