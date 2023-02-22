@@ -3,185 +3,177 @@
 {% load static %}
 {% load crispy_forms_tags %}
 <div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
-        <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLongTitle">Add Contact</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+   <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+         <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLongTitle">Add Contact</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
-        </button>
-        </div>
-        <div class="modal-body">
-        <!-- form -->
-        <form id="add-contact">
-            <div class="form-group2">
-              <label for="inputName">Contact Name</label>
-              <input type="text" class="form-control" id="inputName" placeholder="ex. John Doe" required>
-              <small id="nameHelp" class="form-text text-muted">you can use your contact's original name instead</small>
-              <br>
-            </div>
-            <div class="form-group2">
-              <label for="exampleInputPassword1">Phone Number</label>
-              <input type="text" class="form-control" id="inputPhone" placeholder="ex. +909101398655" required>
-            </div>
-            <div class="form-check">
-              <br>
-              <input type="checkbox" class="form-check-input" id="custom-or-another" onchange="checkBX()">
-              <label class="form-check-label" for="custom-or-another">use contact's original name</label>
-              <small id="invalidPhone" class="form-text text-danger"></small>
-            </div>
-            <div class="modal-footer">
-                <br>
-                <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="clearAddContactMsg()">Close</button>
-                <button type="submit" class="btn btn-primary">Add</button>
-            </div>
-        </form>
-          <!-- end form -->
-        </div>
-        
-    </div>
-    </div>				
+            </button>
+         </div>
+         <div class="modal-body">
+            <!-- form -->
+            <form id="add-contact">
+               <div class="form-group2">
+                  <label for="inputName">Contact Name</label>
+                  <input type="text" class="form-control" id="inputName" placeholder="ex. John Doe" required>
+                  <small id="nameHelp" class="form-text text-muted">you can use your contact's original name instead</small>
+                  <br>
+               </div>
+               <div class="form-group2">
+                  <label for="exampleInputPassword1">Phone Number</label>
+                  <input type="text" class="form-control" id="inputPhone" placeholder="ex. +909101398655" required>
+               </div>
+               <div class="form-check">
+                  <br>
+                  <input type="checkbox" class="form-check-input" id="custom-or-another" onchange="checkBX()">
+                  <label class="form-check-label" for="custom-or-another">use contact's original name</label>
+                  <small id="invalidPhone" class="form-text text-danger"></small>
+               </div>
+               <div class="modal-footer">
+                  <br>
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="clearAddContactMsg()">Close</button>
+                  <button type="submit" class="btn btn-primary">Add</button>
+               </div>
+            </form>
+            <!-- end form -->
+         </div>
+      </div>
+   </div>
 </div>
 <!-- -------------- -->
 <div class="modal fade modal-md" id="ContactInfoModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-  <div class="modal-content">
-      <div class="modal-body">
-       <!-- form -->
-       <form id="contact-info">
-        <div class="form-group2">
-          <img src="images/sm.png" class="info_profile rounded-circle">
-        </div>       
-        <div class="form-group2">
-          <label>contact name</label>
-          <input type="text" id="info-cName" class="form-control">
-        </div>
-        <div class="form-group2">
-          <label>username</label>
-          <input type="text" class="form-control" disabled>
-        </div>
-        <div class="form-group2">
-          <label>phone number</label>
-          <input type="text" class="form-control" disabled>
-        </div>
-        <div class="form-group2">
-          <label>date joined</label>
-          <input type="text" class="form-control" disabled>
-        </div>
-        <div class="form-group2">
-          <label>bio</label>
-          <textarea class="form-control" rows="4" cols="50" disabled></textarea>
-        </div>
-        <div class="modal-footer">
-            <br>
-            <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
-            <button type="submit" onclick="saveContactInfo()" class="btn btn-primary btn-sm">Save</button>
-        </div>
-    </form>
-      <!-- end form -->
+   <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+         <div class="modal-body">
+            <!-- form -->
+            <form id="contact-info">
+               <div class="form-group2">
+                  <img src="images/sm.png" class="info_profile rounded-circle">
+               </div>
+               <div class="form-group2">
+                  <label>contact name</label>
+                  <input type="text" id="info-cName" class="form-control">
+               </div>
+               <div class="form-group2">
+                  <label>username</label>
+                  <input type="text" class="form-control" disabled>
+               </div>
+               <div class="form-group2">
+                  <label>phone number</label>
+                  <input type="text" class="form-control" disabled>
+               </div>
+               <div class="form-group2">
+                  <label>date joined</label>
+                  <input type="text" class="form-control" disabled>
+               </div>
+               <div class="form-group2">
+                  <label>bio</label>
+                  <textarea class="form-control" rows="4" cols="50" disabled></textarea>
+               </div>
+               <div class="modal-footer">
+                  <br>
+                  <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+                  <button type="submit" onclick="saveContactInfo()" class="btn btn-primary btn-sm">Save</button>
+               </div>
+            </form>
+            <!-- end form -->
+         </div>
       </div>
-      
-  </div>
-  </div>				
+   </div>
 </div>
 <!-- ------------------ -->
 <div class="modal fade" id="Profile" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-  <div class="modal-content">
-      <div class="modal-header">
-      <h5 class="modal-title" id="exampleModalLongTitle">Profile</h5>
-      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-      </button>
+   <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+         <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLongTitle">Profile</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+         </div>
+         <div class="modal-body">
+            <!-- form -->
+            <form method="POST" enctype="multipart/form-data">
+               {% csrf_token %}
+               <fieldset class="form-group">
+                  <img src="{{ request.user.profile.picture.url }}" class="info_profile rounded-circle">
+                  {{ uu_form|crispy }}
+                  {{ pu_form|crispy }}
+               </fieldset>
+               <div class="form-group">
+               </div>
+               <!-- end form -->
+         </div>
+         <div class="modal-footer">
+         <br>
+         <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+         <button type="submit" class="btn btn-primary btn-sm">Update profile</button>
+         </div>
+         </form>
       </div>
-      <div class="modal-body">
-      <!-- form -->
-      <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-        <fieldset class="form-group">
-            <!-- <legend class="border-bottom mb-4">Profile Info</legend> -->
-            <img src="{{ request.user.profile.picture.url }}" class="info_profile rounded-circle">
-            {{ uu_form|crispy }}
-            {{ pu_form|crispy }}
-        </fieldset>
-        <div class="form-group">
-            <!-- <button class="btn btn-outline-info" type="submit">Update Profile</button> -->
-        </div>
-    
-        <!-- end form -->
-      </div>
-      <div class="modal-footer">
-        <br>
-        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary btn-sm">Update profile</button>
-    </div>
-  </form>
-      
-  </div>
-  </div>				
+   </div>
 </div>
 <!-- ------------------ -->
 <div class="modal fade" id="Forward" tabindex="-1" role="dialog" aria-labelledby="Forward" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-  <div class="modal-content">
-      <div class="modal-body" id="forward-contacts">
-      
+   <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+         <div class="modal-body" id="forward-contacts">
+         </div>
+         <div class="modal-footer">
+            <br>
+            <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm" onclick="forwardMessage()">forward</button>
+         </div>
+         </form>
       </div>
-      <div class="modal-footer">
-        <br>
-        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">cancel</button>
-        <button type="submit" class="btn btn-primary btn-sm" onclick="forwardMessage()">forward</button>
-    </div>
-  </form>
-      
-  </div>
-  </div>				
+   </div>
 </div>
 <!-- Modal -->
 <div class="modal fade" id="clearChatYesNo" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLongTitle">Warning</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
+   <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+         <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLongTitle">Warning</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+         </div>
+         <div class="modal-body">
+            by applying this all messages for you and your contact will be permanently deleted
+         </div>
+         <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" onclick="clearChat()" id="clearChatClose">Clear</button>
+         </div>
       </div>
-      <div class="modal-body">
-        by applying this all messages for you and your contact will be permanently deleted
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" onclick="clearChat()" id="clearChatClose">Clear</button>
-      </div>
-    </div>
-  </div>
+   </div>
 </div>
 <!-- Modal -->
 <div class="modal fade" id="deleteAccount" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLongTitle">Warning</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
+   <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+         <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLongTitle">Warning</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+         </div>
+         <div class="modal-body">
+            by applying this your account will be fully deleted. Are you sure?
+         </div>
+         <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" onclick="deleteAccount()">Delete Account</button>
+         </div>
       </div>
-      <div class="modal-body">
-        by applying this your account will be fully deleted. Are you sure?
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" onclick="deleteAccount()">Delete Account</button>
-      </div>
-    </div>
-  </div>
+   </div>
 </div>
 <script>
-	const user = '{{ request.user }}';
-	const username = '{{ request.user.username }}';
-	const userID = '{{ request.user.id }}';
-	const userPhone = '{{ request.user.phone }}';
+   const user = '{{ request.user }}';
+   const username = '{{ request.user.username }}';
+   const userID = '{{ request.user.id }}';
+   const userPhone = '{{ request.user.phone }}';
 </script>
 <script src="{% static 'js/chat.js' %}"></script>
 {% endblock %}

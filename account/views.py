@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+
 from .models import User
 from .forms import UserCreationForm
 from .forms import VerifyForm
@@ -33,10 +34,8 @@ def register(request):
 
     return render(request, 'account/register.html', context)
 
-
 def login(request):
     return render(request, 'account/login.html', context={'title': 'Login'})
-
 
 @login_required
 def verify_code(request):

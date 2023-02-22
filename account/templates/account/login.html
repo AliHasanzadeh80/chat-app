@@ -1,24 +1,22 @@
 {% extends 'account/base.html' %}
 {% block content %}
 {% load crispy_forms_tags %}
-
 <div class="container h-100">
-    <div class="row h-100 justify-content-center align-items-center">
-        <div class="col-10 col-md-8 col-lg-6">
-            <!-- Form -->
-           <form method="POST" class="form-example">
-                {% csrf_token %}
-                {{ form|crispy }}
-                <button class="btn btn-primary btn-sm" type="submit">Login</button>
-            </form>
-            <!-- Form end -->
-            <div class=" pt-3">
-                <span class="text-dark">
-                    Don't have an account? <a class="ml-2 text-blue text-decoration-none" href="{% url 'account-register' %}">sign up</a>
-                </span>
-            </div>
-        </div>
-    </div>
+   <div class="row h-100 justify-content-center align-items-center">
+      <div class="col-10 col-md-8 col-lg-6">
+         <!-- Form -->
+         <form method="POST" class="form-example">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <button class="btn btn-primary btn-sm" type="submit">Login</button>
+         </form>
+         <!-- Form end -->
+         <div class=" pt-3">
+            <span class="text-dark">
+            Don't have an account? <a class="ml-2 text-blue text-decoration-none" href="{% url 'account-register' %}">sign up</a>
+            </span>
+         </div>
+      </div>
+   </div>
 </div>
-
 {% endblock %}

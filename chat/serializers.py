@@ -7,12 +7,10 @@ class RoomSerializer(serializers.ModelSerializer):
         model = Room
         fields = '__all__'
 
-
 class CNameSerializer(serializers.ModelSerializer):
     class Meta:
         model = SavedContactName
         fields = '__all__'
-
 
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:

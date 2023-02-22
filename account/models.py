@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+
 from datetime import datetime
 
 class User(AbstractUser):
@@ -12,14 +13,14 @@ class Profile(models.Model):
     picture = models.ImageField(default='profile_images/default.png', upload_to='profile_images')
     bio = models.TextField(blank=True, null=True)
     date_joined = models.DateTimeField(auto_now_add=True)
-    last_seen = models.DateTimeField(auto_now=True)
+    last_seen = models.DateTimeField(auto_now_add=True)
     is_online = models.BooleanField(default=False)
 
     @property
     def get_full_data(self):
         dj_time = self.date_joined.strftime('%B %d, %Y')
         sub = datetime.now() - self.last_seen.replace(tzinfo=None)
-
+       
         if 0 <= sub.days < 1:
             ls_time = self.last_seen.strftime('%H:%M')
         elif 1 <= sub.days < 365:

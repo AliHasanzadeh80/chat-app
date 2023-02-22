@@ -21,7 +21,6 @@ class Room(models.Model):
     def unread_count(self, user):
         return  self.messages.filter(seen=False).exclude(sender=user).count()
 
-
 class SavedContactName(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE, related_name='saved_names')
     chat = models.ForeignKey(Room, null=True, on_delete=models.CASCADE, related_name='chat')
@@ -30,7 +29,6 @@ class SavedContactName(models.Model):
     def __str__(self):
         return f"at {self.chat}, {self.user.username}={self.saved_name}"
     
-
 class Message(models.Model):
     STATUS = (
         ("delivering","delivering"),

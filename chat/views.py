@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+
 from account.decorators import verification_required
 from account.forms import ProfileUpdateForm, UserUpdateForm
 
@@ -30,6 +30,7 @@ def home(request):
         'pu_form': profile_update_form,
         'uu_form': user_update_form,
     }
+    
     return render(request, 'chat/homechild.html', context)
 
 @login_required

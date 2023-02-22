@@ -1,19 +1,17 @@
 {% extends 'account/base.html' %}
 {% block content %}
 {% load crispy_forms_tags %}
-
 <div class="container h-100">
-    <div class="row h-100 justify-content-center align-items-center">
-        <div class="col-10 col-md-8 col-lg-6">
-            <!-- Form -->
-          <form method="POST">
-                {% csrf_token %}
-                {{ form|crispy }}
-                <button class="btn btn-primary btn-lg" type="submit">verify account</button>
-            </form>
-            <!-- Form end -->
-        </div>
-    </div>
+   <div class="row h-100 justify-content-center align-items-center">
+      <div class="col-10 col-md-8 col-lg-6">
+         <!-- Form -->
+         <form method="POST">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <button class="btn btn-primary btn-lg" type="submit">verify account</button>
+         </form>
+         <!-- Form end -->
+      </div>
+   </div>
 </div>
-
 {% endblock %}

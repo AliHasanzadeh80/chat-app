@@ -1,6 +1,6 @@
-from re import L
 from django.contrib import admin
 from .models import Room, SavedContactName, Message
+
 
 class MessageAdmin(admin.ModelAdmin):
     list_display = ('room', 'sender', 'content', 'delivered_time')

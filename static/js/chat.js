@@ -1,4 +1,3 @@
-// ------------------------------- socket declarations----------------------------------
 var ws_schema = window.location.protocol === "http:" ? "ws://" : "wss://";
 var chatSock = new WebSocket(ws_schema + window.location.host + '/ws/');
 var roomSock = new WebSocket(ws_schema + window.location.host + '/ws/room/');
@@ -21,7 +20,6 @@ chatSock.onclose = function(e){
 }
 chatSock.onmessage = function (e) {
     var response = JSON.parse(e.data);
-    console.log(response);
     if(response.action === "full_data"){
         full_data = response.data;
         contactsArea = document.querySelector('.contacts');
@@ -31,31 +29,26 @@ chatSock.onmessage = function (e) {
         Object.keys(full_data).forEach(function(index){
             fillContacts(full_data[index], index);
         })
+        ChangeChat(`pv-${Object.keys(full_data)[0]}`)
     }
     else if(response.action === "update_last_seen"){
         update_last_seen(response);
     }
 }
 // ------------------------------- room socket ----------------------------------
-roomSock.onopen = function(e){
-
-}
 roomSock.onmessage = function (e) {
     var response = JSON.parse(e.data);
-    console.log(response);
     if(response.action === "new_chat"){
         if(response.response_status == 400){
             invalidPhone.innerText = response.data.message;
         }
     }
     else if(response.action === "update_contact"){
-        console.log('another action!')
     }
     else{
         var index = Object.keys(response)[0];
         fillContacts(response[index], index);
         full_data[parseInt(index)] = response[index];
-        console.log('new full data:', full_data);
     }
 }
 // ------------------------------- message socket ----------------------------------
@@ -64,7 +57,6 @@ msgSock.onopen = function(e){
 }
 msgSock.onmessage = function (e) {   
     var response = JSON.parse(e.data);
-    console.log(response)
     var action = response.action;
     switch(action){
         case 'create':
@@ -77,7 +69,6 @@ msgSock.onmessage = function (e) {
             var new_message = response.data;  
             var messageID = new_message.id;  
             if(!response.request_id){
-                console.log(currentChat, new_message.roomID);               
                 if(new_message.sender !== user){
                     if(currentChat == new_message.roomID){
                         sockAction(2, 'patch', messageID, {seen: true});
@@ -96,7 +87,6 @@ msgSock.onmessage = function (e) {
                     var [sender, align] = getAlign(new_message.sender);
                     fillMessage(new_message, sender, align, new_message.senderPic);
                 }
-                console.log(full_data);
             }else{
                 sockAction(2, 'patch', messageID, {status: "delivered"});
             }
@@ -112,7 +102,6 @@ msgSock.onmessage = function (e) {
                 if(response.data.roomID === currentChat){
                     document.getElementById(response.data.messageID).querySelector('.message-ticks').src = 'images/seen.png';
                 }
-                console.log('new full', full_data);
             }
             break;
 
@@ -242,9 +231,7 @@ function sockAction(...params){
 }
 
 function fillContacts(data, id){
-    // console.log('data:', data, 'id', id);
     var connection_status = data.profile.is_online === true ? 'online':'offline';
-    // var unread_messages_count = data.unread_count > 0 ? data.unread_count:'';
     var CounterVisibility = data.unread_count === 0 ? "invisible":"visible";
     var ConStatusVisibility = data.belongs_to === 'pv' ? "visible":"invisible";
     var profPic = data.belongs_to === 'pv' ? data.profile.picture:smPic;
@@ -274,7 +261,7 @@ function searchContact(){
     
     for (let i = 0; i < li.length; i++) {
         wholeElem = li[i].parentElement.parentElement.parentElement;
-        txtValue = li[0].textContent || li[0].innerText;
+        txtValue = li[i].textContent || li[i].innerText;
         if(txtValue.toUpperCase().indexOf(filter) > -1){
             wholeElem.style.display = "";
         }else{
@@ -359,7 +346,6 @@ function deleteMessage(id){
 
 function openForward(messageID){
     fwMessage = document.getElementById(`msg-${messageID}`).innerText;
-    console.log(fwMessage)
     forwardModal = document.getElementById('forward-contacts');
     forwardModal.innerHTML = '';
     
@@ -392,9 +378,7 @@ function forwardActivate(obj){
   }
 
 function forwardMessage(obj){
-    console.log(selectedContacts);
     selectedContacts.forEach(function(room, index){
-        console.log('sending to room:', room)
         var request = {
             'sender': user,
             'roomID': room,
@@ -596,7 +580,6 @@ function contactInfo(){
 function saveContactInfo(){
     var newCName = document.getElementById('info-cName').value;
     if(newCName !== full_data[currentChat].profile.saved_name){
-        console.log('true');
         sockAction(1, 'update_contact', {
             roomID: currentChat,
             newCName: newCName,
@@ -604,8 +587,6 @@ function saveContactInfo(){
         document.getElementById(`pv-${currentChat}`).querySelector('.username').innerText = newCName;
         document.getElementById('cName').innerText = newCName;
         full_data[currentChat].profile.saved_name = newCName;
-    }else{
-        console.log('false')
     }
 }
 
